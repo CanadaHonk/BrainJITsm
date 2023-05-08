@@ -1,0 +1,158 @@
+<div>
+  <h1>brainfuck <span id="code_stats"></span></h1>
+  <pre contenteditable id="code"></pre>
+</div>
+<div id="ast_wrapper">
+  <h1><span id="ast_name">AST</span> <span id="ast_stats"></span></h1>
+  <pre id="ast"></pre>
+</div>
+<div>
+  <h1>OST <span id="ost_stats"></span></h1>
+  <pre id="ost"></pre>
+</div>
+<div>
+  <h1>assembly <span id="asm_stats"></span></h1>
+  <pre id="asm"></pre>
+</div>
+<!-- <div>
+  <h1>machine code</h1>
+  <pre id="machine"></pre>
+</div> -->
+
+<div id="below">
+  <div>
+    <h1>output <span id="out_stats"></span></h1>
+    <pre id="out"></pre>
+  </div>
+
+  <div>
+    <h1>memory <span id="memory_stats"></span></h1>
+    <pre id="memory"></pre>
+  </div>
+</div>
+
+<style>
+html, body {
+  margin: 0;
+  background: #101418;
+  width: 100%;
+  height: 100%;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  color: #fff;
+  font-family: sans-serif;
+}
+
+body {
+  margin-top: 2vh;
+  display: flex;
+  justify-content: center;
+  gap: 2vw;
+
+  height: calc(100% - 2vh);
+}
+
+body > div {
+  background: #202428;
+  height: calc(100% - 20vh - 2vw);
+}
+
+body > div:not(#below) {
+  padding: 8px;
+  border-radius: 8px;
+}
+
+body > div:not(#below), #below > div {
+  display: flex;
+  flex-direction: column;
+}
+
+#below {
+  position: absolute;
+  width: 100vw;
+  height: 20vh;
+  bottom: 0;
+
+  border-top: 2px solid #404448;
+
+  display: flex;
+}
+
+#below > div {
+  height: 100%;
+}
+
+#below > :first-child {
+  width: 60vw;
+  border-right: 2px solid #404448;
+}
+
+#below > :last-child {
+  flex-grow: 1;
+}
+
+h1 {
+  margin: 6px 0 10px 0;
+  text-align: center;
+  font-size: 28px;
+}
+
+pre {
+  font-family: monospace;
+  background: #101418;
+  flex-grow: 1;
+  padding: 4px;
+  margin: 0;
+  font-size: 16px;
+  overflow: auto;
+}
+
+#code {
+  width: 40vw;
+}
+
+#ast, #ost {
+  width: 14vw;
+}
+
+#asm {
+  width: 20vw;
+}
+
+#machine {
+  width: 0;
+}
+
+.highlight-var, .highlight-num, .highlight-const, .highlight-flow {
+  font-family: monospace;
+  font-size: 16px;
+}
+
+.highlight-var {
+  color: rgb(255, 97, 97);
+}
+
+.highlight-num {
+  color: rgb(90, 160, 240);
+}
+
+.highlight-flow {
+  color: rgb(172, 90, 240);
+}
+
+.highlight-const {
+  color: rgb(194, 148, 87);
+}
+
+[id$="_stats"] {
+  float: right;
+  margin-top: 12px;
+  font-size: 16px;
+  color: #a0a4a8;
+}
+</style>
+
+<script type="module" src="src/runner.js"></script>

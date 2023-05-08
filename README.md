@@ -1,2 +1,2 @@
 # brainaotsm
- brainfuck aot wasm compiler in js for browsers
+Brainfuck JIT WASM compiler in JS for browsers
