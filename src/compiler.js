@@ -83,8 +83,9 @@ const genCode = ost => {
     if (globalThis.debug) asm.push(`local.set 0`);
   };
 
-  const loadCell = () => {
+  const loadCell = (offset = 0) => {
     loadIndex();
+    if (offset !== 0) addI32(offset);
 
     code.push(Opcodes.i32_load8_s);
     code.push(...[0x00, 0x00]);
@@ -149,6 +150,20 @@ const genCode = ost => {
         case Op.CellSet:
           loadIndex();
           loadI32(x.val);
+          writeCell();
+          break;
+
+        case Op.CellAddCell:
+          // load index + offset for writing later
+          loadIndex();
+          addI32(x.offset);
+
+          // load current and offset cell to add
+          loadCell();
+          loadCell(x.offset);
+          code.push(Opcodes.i32_add);
+          if (globalThis.debug) asm.push(`i32.add`);
+
           writeCell();
           break;
 

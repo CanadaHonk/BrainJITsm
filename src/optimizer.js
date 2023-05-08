@@ -1,7 +1,7 @@
 import { AST, Token } from './parser.js';
 import { enumify } from './util.js';
 
-export const Op = enumify('PointerAdd', 'PointerSet', 'CellAdd', 'CellSet', 'Output', 'Input', 'Loop');
+export const Op = enumify('PointerAdd', 'PointerSet', 'CellAdd', 'CellSet', 'CellAddCell', 'Output', 'Input', 'Loop');
 
 class OST extends AST {
   toString() {
@@ -35,6 +35,10 @@ class OST extends AST {
             out += `CellSet ${x.val}`;
             break;
 
+          case Op.CellAddCell:
+            out += `CellAddCell ${x.offset}`;
+            break;
+
           case Op.Output:
             out += 'Output';
             break;
@@ -65,6 +69,26 @@ class OST extends AST {
     return out;
   }
 }
+
+const isCopyLoop = nodes => {
+  const n = (nodes.length - 1) / 3;
+  let i = 0;
+  if (nodes[i].type !== Token.Decrement) return;
+
+  // '>+'.repeat(n)
+  for (i = 1; i <= n * 2; i++) {
+    if (i % 2 === 0 && nodes[i].type !== Token.Increment) return;
+    if (i % 2 === 1 && nodes[i].type !== Token.PointerRight) return;
+  }
+
+  // '<'.repeat(n)
+  for (; i <= n * 3; i++) {
+    if (nodes[i].type !== Token.PointerLeft) return;
+  }
+
+  return i === nodes.length;
+};
+
 
 // AST -> OST - optimized, generic ops
 export const optimize = ast => {
@@ -127,6 +151,27 @@ export const optimize = ast => {
               op: Op.CellSet,
               val: 0
             });
+            break;
+          }
+
+          // [->+<] 4, [->+>+<<] 7, [->+>+>+<<<] 10, etc
+          if ((x.nodes.length - 1) % 3 === 0 && isCopyLoop(x.nodes)) { // 3n + 1
+            const n = (x.nodes.length - 1) / 3;
+
+            for (let i = 0; i < n; i++) {
+              // CellAddCell { offset } - mem[index + offset] += mem[index]
+              out.push({
+                op: Op.CellAddCell,
+                offset: i + 1
+              });
+            }
+
+            // set current cell to 0
+            out.push({
+              op: Op.CellSet,
+              val: 0
+            });
+
             break;
           }
 
