@@ -53,7 +53,7 @@ const createSection = (type, data) => [
   ...encodeVector(data)
 ];
 
-window.debug = false;
+globalThis.debug = false;
 
 export let asm = [];
 const genCode = ost => {
@@ -74,13 +74,13 @@ const genCode = ost => {
   const loadIndex = () => {
     code.push(Opcodes.local_get);
     code.push(...localIndex);
-    if (window.debug) asm.push(`local.get 0`);
+    if (globalThis.debug) asm.push(`local.get 0`);
   };
 
   const writeIndex = () => { // ($value)
     code.push(Opcodes.local_set);
     code.push(...localIndex);
-    if (window.debug) asm.push(`local.set 0`);
+    if (globalThis.debug) asm.push(`local.set 0`);
   };
 
   const loadCell = () => {
@@ -88,25 +88,25 @@ const genCode = ost => {
 
     code.push(Opcodes.i32_load8_s);
     code.push(...[0x00, 0x00]);
-    if (window.debug) asm.push(`i32.load8_s`);
+    if (globalThis.debug) asm.push(`i32.load8_s`);
   };
 
   const writeCell = () => { // ($value, $location)
     code.push(Opcodes.i32_store8);
     code.push(...[0x00, 0x00]);
-    if (window.debug) asm.push(`i32.store8`);
+    if (globalThis.debug) asm.push(`i32.store8`);
   };
 
   const loadI32 = val => {
     code.push(Opcodes.i32_const);
     code.push(...signedLEB128(val));
-    if (window.debug) asm.push(`i32.const ${val}`);
+    if (globalThis.debug) asm.push(`i32.const ${val}`);
   };
 
   const addI32 = val => { // ($value) -> ($value + val)
     loadI32(val);
     code.push(Opcodes.i32_add);
-    if (window.debug) asm.push(`i32.add`);
+    if (globalThis.debug) asm.push(`i32.add`);
   };
 
   const debug = str => {
@@ -115,14 +115,14 @@ const genCode = ost => {
 
       code.push(Opcodes.call);
       code.push(...unsignedLEB128(0));
-      if (window.debug) asm.push(`call 0`);
+      if (globalThis.debug) asm.push(`call 0`);
     }
   };
 
   const unreachable = msg => {
     debug(`unreachable! ` + msg);
     code.push(Opcodes.unreachable);
-    if (window.debug) asm.push(`unreachable`);
+    if (globalThis.debug) asm.push(`unreachable`);
   };
 
   const emitCode = nodes => {
@@ -156,7 +156,7 @@ const genCode = ost => {
           loadCell();
           code.push(Opcodes.call);
           code.push(...unsignedLEB128(0));
-          if (window.debug) asm.push(`call 0`);
+          if (globalThis.debug) asm.push(`call 0`);
           break;
 
         case Op.Input:
@@ -166,20 +166,20 @@ const genCode = ost => {
         case Op.Loop:
           code.push(Opcodes.block);
           code.push(Blocktype.void);
-          if (window.debug) asm.push(`block 0`);
+          if (globalThis.debug) asm.push(`block 0`);
           code.push(Opcodes.loop);
           code.push(Blocktype.void);
-          if (window.debug) asm.push(`loop 1`);
+          if (globalThis.debug) asm.push(`loop 1`);
 
           // compute the while-like expression
           loadCell();
           code.push(Opcodes.i32_eqz);
-          if (window.debug) asm.push(`i32.eqz`);
+          if (globalThis.debug) asm.push(`i32.eqz`);
 
           // br_if $label0
           code.push(Opcodes.br_if);
           code.push(...signedLEB128(1));
-          if (window.debug) asm.push(`br_if 1`);
+          if (globalThis.debug) asm.push(`br_if 1`);
 
           // the nested logic
           emitCode(x.nodes);
@@ -187,7 +187,7 @@ const genCode = ost => {
           // br $label1
           code.push(Opcodes.br);
           code.push(...signedLEB128(0));
-          if (window.debug) asm.push(`br 0`);
+          if (globalThis.debug) asm.push(`br 0`);
 
           code.push(Opcodes.end);
           code.push(Opcodes.end);

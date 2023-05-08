@@ -2,20 +2,20 @@ import { parse } from './parser.js';
 import { optimize } from './optimizer.js';
 import { compile, asm } from './compiler.js';
 
+import fs from 'fs';
+
 let times = [];
 
-const print = str => out.textContent += str;
+const print = str => process.stdout.write(str);
 const reportTime = (what, ms) => {
   times.push(ms);
-
-  if (out_stats.textContent) out_stats.textContent += ', ';
-  out_stats.textContent += `${what}: ${(ms).toFixed(0)}ms`;
+  console.log(`${what}: ${ms.toFixed(0)}ms`);
 };
 
 
 const memoryToString = buf => {
   let out = '';
-  for (let i = 0; i < Math.floor((window.innerWidth * 0.4) / 28); i++) {
+  for (let i = 0; i < 24; i++) {
     out += buf[i].toString(16).padStart(2, '0') + ' ';
   }
 
@@ -38,7 +38,7 @@ const run = async wasm => {
   instance.exports.run();
   reportTime('exec', performance.now() - t2);
 
-  document.getElementById('memory').textContent = memoryToString(new Uint8Array(memory.buffer));
+  console.log('memory:', memoryToString(new Uint8Array(memory.buffer)));
 };
 
 const highlightAsm = asm =>
@@ -50,35 +50,13 @@ const highlightAsm = asm =>
 
 const execute = async src => {
   times = [];
-  out_stats.textContent = '';
-  code_stats.textContent = `${src.length} chars`;
-
-  out.textContent = '';
-
-  document.getElementById('code').textContent = src;
-
   const t1 = performance.now();
   const ast = parse(src);
   reportTime('parse', performance.now() - t1);
 
-  const reportAST = (name, ast) => {
-    ast_name.textContent = name;
-    ast_stats.textContent = `${ast.length()} nodes`;
-    document.getElementById('ast').textContent = ast.toString();
-  };
-
   const t2 = performance.now();
   const ost = optimize(ast);
   reportTime('opt', performance.now() - t2);
-
-  reportAST('AST', ast);
-  ast_wrapper.onclick = () => {
-    if (ast_name.textContent === 'AST') reportAST('OST', ost);
-      else reportAST('AST', ast);
-  };
-
-  ost_stats.textContent = `${ost.length()} nodes`;
-  document.getElementById('ost').textContent = ost.toString();
 
   const t3 = performance.now();
   const wasm = compile(ost);
@@ -88,20 +66,15 @@ const execute = async src => {
 
   reportTime('total', times.reduce((acc, x) => acc + x, 0));
 
-  window.debug = true;
   compile(ost);
-  document.getElementById('asm').innerHTML = highlightAsm(asm.join('\n'));
-  asm_stats.textContent = `${asm.length} ops`;
-  window.debug = false;
+  // console.log(asm.join('\n'));
 };
 // execute(`++>+><++`);
 
 // execute(`++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.`);
 
-execute(await (await fetch(`examples/mandelbrot.bf`)).text());
+execute(fs.readFileSync(`examples/mandelbrot.bf`, 'utf8'));
+
+// execute(await (await fetch(`http://localhost:1337/examples/mandelbrot.bf`)).text());
 // execute(await (await fetch(`examples/hanoi.bf`)).text());
 // execute(`+>`.repeat(500));
-
-document.onauxclick = () => {
-  execute(code.textContent);
-};
