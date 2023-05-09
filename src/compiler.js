@@ -27,6 +27,7 @@ const Opcodes = {
 
   local_get: 0x20,
   local_set: 0x21,
+  local_tee: 0x22, // set and return value (set and get combined)
 
   i32_load: 0x28,
   i32_load8_s: 0x2C,
@@ -69,17 +70,33 @@ const genCode = ost => {
     return symbols.get(name);
   };
 
-  const localIndex = unsignedLEB128(localIndexForSymbol('index'));
+  const localIndex = localIndexForSymbol('index');
 
   const loadIndex = () => {
+    if (globalThis.opts.asmSetGetAsTee && code[code.length - 1] === localIndex && code[code.length - 2] === Opcodes.local_set) {
+      // rewrite local.set, local.get as local.tee (sets and returns value)
+      code.pop();
+      code.pop();
+
+      code.push(Opcodes.local_tee);
+      code.push(localIndex);
+
+      if (globalThis.debug) {
+        asm.pop();
+        if (globalThis.debug) asm.push(`local.tee 0`);
+      }
+
+      return;
+    }
+
     code.push(Opcodes.local_get);
-    code.push(...localIndex);
+    code.push(localIndex);
     if (globalThis.debug) asm.push(`local.get 0`);
   };
 
   const writeIndex = () => { // ($value)
     code.push(Opcodes.local_set);
-    code.push(...localIndex);
+    code.push(localIndex);
     if (globalThis.debug) asm.push(`local.set 0`);
   };
 
