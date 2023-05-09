@@ -251,14 +251,14 @@ export const compile = ost => {
   );
 
   const printFunctionImport = [
-    ...encodeString("env"),
+    0,
     ...encodeString("print"),
     ExportDesc.func,
     0x00
   ];
 
   const memoryImport = [
-    ...encodeString("env"),
+    0,
     ...encodeString("memory"),
     ExportDesc.mem,
     0x00,

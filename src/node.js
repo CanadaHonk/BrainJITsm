@@ -37,7 +37,7 @@ const run = async wasm => {
 
   const memory = new WebAssembly.Memory({ initial: 1 });
   const { instance } = await WebAssembly.instantiate(wasm, {
-    env: {
+    '': {
       print: i => print(String.fromCharCode(i)),
       memory
     }
