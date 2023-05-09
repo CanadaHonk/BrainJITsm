@@ -9,7 +9,7 @@ const reportTime = (what, ms) => {
   times.push(ms);
 
   if (out_stats.textContent) out_stats.textContent += ', ';
-  out_stats.textContent += `${what}: ${(ms).toFixed(0)}ms`;
+  out_stats.textContent += `${what}: ${(ms).toFixed(1)}ms`;
 };
 
 
