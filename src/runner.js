@@ -81,15 +81,6 @@ const execute = async (src, toRun = true) => {
   const ost = optimize(ast);
   reportTime('opt', performance.now() - t2);
 
-  reportAST('AST', ast);
-  ast_wrapper.onclick = () => {
-    if (ast_name.textContent === 'AST') reportAST('OST', ost);
-      else reportAST('AST', ast);
-  };
-
-  ost_stats.textContent = `${ost.length()} nodes`;
-  document.getElementById('ost').textContent = ost.toString();
-
   const t3 = performance.now();
   const wasm = compile(ost);
   reportTime('compile', performance.now() - t3);
@@ -98,11 +89,22 @@ const execute = async (src, toRun = true) => {
 
   reportTime('total', times.reduce((acc, x) => acc + x, 0));
 
-  window.debug = true;
-  compile(ost);
-  document.getElementById('asm').innerHTML = highlightAsm(asm.join('\n'));
-  asm_stats.textContent = `${asm.length} ops, ${wasm.byteLength} bytes`;
-  window.debug = false;
+  setTimeout(() => {
+    window.debug = true;
+    compile(ost);
+    document.getElementById('asm').innerHTML = highlightAsm(asm.join('\n'));
+    asm_stats.textContent = `${asm.length} ops, ${wasm.byteLength} bytes`;
+    window.debug = false;
+
+    reportAST('AST', ast);
+    /* ast_wrapper.onclick = () => {
+      if (ast_name.textContent === 'AST') reportAST('OST', ost);
+        else reportAST('AST', ast);
+    }; */
+
+    ost_stats.textContent = `${ost.length()} nodes`;
+    document.getElementById('ost').textContent = ost.toString();
+  }, 100);
 };
 
 const genOptsUI = () => {
