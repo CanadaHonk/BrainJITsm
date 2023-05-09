@@ -33,7 +33,7 @@
 
 <div id="opts">
   <h1>opts</h1>
-  <div><input type="range" min="0" max="3" value="3" id="opt_level"> level</div>
+  <div><select id="opt_level"><option value="0">0 (no opt)</option><option value="1">1 (simple opt)</option><option value="2">2 (+ loops opt)</option><option value="3" selected>3 (+ asm opt)</option></select> level</div>
 </div>
 
 <style>
@@ -111,7 +111,7 @@ body > div:not(#below):not(#opts), #below > div {
 }
 
 #opt_level {
-  width: 80px;
+  width: 34px;
 }
 
 #below > div {
