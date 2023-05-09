@@ -15,8 +15,18 @@ const reportTime = (what, ms) => {
 
 const memoryToString = buf => {
   let out = '';
-  for (let i = 0; i < 24; i++) {
-    out += buf[i].toString(16).padStart(2, '0') + ' ';
+  const xCells = 36;
+  const yCells = 8;
+
+  for (let j = 0; j < yCells; j++) {
+    for (let i = 0; i < xCells; i++) {
+      const val = buf[j * xCells + i];
+      if (val === 0) out += '\x1B[2m';
+      out += val.toString(16).padStart(2, '0');
+      if (val === 0) out += '\x1B[22m';
+      out += ' ';
+    }
+    out += '\n';
   }
 
   return out;
@@ -38,7 +48,7 @@ const run = async wasm => {
   instance.exports.run();
   reportTime('exec', performance.now() - t2);
 
-  console.log('memory:', memoryToString(new Uint8Array(memory.buffer)));
+  console.log('memory:\n' + memoryToString(new Uint8Array(memory.buffer)));
 };
 
 const highlightAsm = asm =>
@@ -73,7 +83,14 @@ const execute = async src => {
 
 // execute(`++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.`);
 
-execute(fs.readFileSync(`examples/mandelbrot.bf`, 'utf8'));
+/* console.log(optimize(parse(`[-<+>]`)).toString());
+console.log(optimize(parse(`[-<<+>+>]`)).toString());
+console.log(optimize(parse(`[->+<]`)).toString());
+console.log(optimize(parse(`[->+>+<<]`)).toString()); */
+
+execute(`+++++++++++++[->++>>>+++++>++>+<<<<<<]`)
+
+// execute(fs.readFileSync(`examples/mandelbrot.bf`, 'utf8'));
 
 // execute(await (await fetch(`http://localhost:1337/examples/mandelbrot.bf`)).text());
 // execute(await (await fetch(`examples/hanoi.bf`)).text());
