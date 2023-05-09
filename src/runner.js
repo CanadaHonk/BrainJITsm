@@ -101,7 +101,7 @@ const execute = async (src, toRun = true) => {
   window.debug = true;
   compile(ost);
   document.getElementById('asm').innerHTML = highlightAsm(asm.join('\n'));
-  asm_stats.textContent = `${asm.length} ops`;
+  asm_stats.textContent = `${asm.length} ops, ${wasm.byteLength} bytes`;
   window.debug = false;
 };
 
