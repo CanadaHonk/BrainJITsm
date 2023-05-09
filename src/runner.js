@@ -108,6 +108,8 @@ const execute = async (src, toRun = true) => {
 };
 
 const genOptsUI = () => {
+  const inps = {};
+
   for (const x in globalThis.opts) {
     const el = document.createElement('div');
 
@@ -121,11 +123,56 @@ const genOptsUI = () => {
       reExecute(false);
     };
 
+    inps[x] = inp;
+
     el.appendChild(inp);
     el.appendChild(document.createTextNode(x));
 
     document.getElementById('opts').appendChild(el);
   }
+
+  opt_level.onchange = () => {
+    globalThis.opts = ({
+      0: {
+        combineOps: false,
+        copyLoop: false,
+        moveLoop: false,
+        clearLoop: false,
+        addToZeroAsSet: false,
+        asmSetGetAsTee: false,
+      },
+      1: {
+        combineOps: true,
+        copyLoop: false,
+        moveLoop: false,
+        clearLoop: false,
+        addToZeroAsSet: false,
+        asmSetGetAsTee: false,
+      },
+      2: {
+        combineOps: true,
+        copyLoop: true,
+        moveLoop: false,
+        clearLoop: true,
+        addToZeroAsSet: false,
+        asmSetGetAsTee: false,
+      },
+      3: {
+        combineOps: true,
+        copyLoop: true,
+        moveLoop: false,
+        clearLoop: true,
+        addToZeroAsSet: true,
+        asmSetGetAsTee: true,
+      },
+    })[parseInt(opt_level.value)];
+
+    for (const x in inps) {
+      inps[x].checked = globalThis.opts[x];
+    }
+
+    reExecute(false);
+  };
 };
 genOptsUI();
 
