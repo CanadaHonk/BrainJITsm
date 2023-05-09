@@ -11,10 +11,9 @@ class OST extends AST {
     const beautify = nodes => {
       let i = 0;
       for (const x of nodes) {
-        const last = depth > 0 && i === nodes.length - 1 && x.op !== Op.Loop;
-        out += ' │ '.repeat(depth);
-
-        if (last) out = out.slice(0, -2) + '└ ';
+        const last = depth > 0 && i === nodes.length - 1 && x.type !== Token.Loop;
+        out += ' │ '.repeat(last ? (depth - 1) : depth);
+        if (last) out += ' └ ';
 
         switch (x.op) {
           case Op.PointerAdd:

@@ -64,15 +64,12 @@ export class AST {
     let out = '';
     let depth = 0;
 
-    const indent = x => ' │ '.repeat(x);
-
     const beautify = nodes => {
       let i = 0;
       for (const x of nodes) {
         const last = depth > 0 && i === nodes.length - 1 && x.type !== Token.Loop;
-        out += indent(depth);
-
-        if (last) out = out.slice(0, -2) + '└ ';
+        out += ' │ '.repeat(last ? (depth - 1) : depth);
+        if (last) out += ' └ ';
 
         switch (x.type) {
           case Token.PointerRight:
