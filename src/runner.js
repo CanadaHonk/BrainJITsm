@@ -58,7 +58,7 @@ const highlightAsm = asm =>
     .replace(/i32\.[^\s]*/g, _ => `<span class="highlight-num">${_}</span>`)
     .replace(/ [0-9\-]+/g, _ => ` <span class="highlight-const">${_.slice(1)}</span>`)
 
-const execute = async src => {
+const execute = async (src, toRun = true) => {
   times = [];
   out_stats.textContent = '';
   code_stats.textContent = `${src.length} chars`;
@@ -94,7 +94,7 @@ const execute = async src => {
   const wasm = compile(ost);
   reportTime('compile', performance.now() - t3);
 
-  await run(wasm);
+  if (toRun === true) await run(wasm);
 
   reportTime('total', times.reduce((acc, x) => acc + x, 0));
 
@@ -104,14 +104,46 @@ const execute = async src => {
   asm_stats.textContent = `${asm.length} ops`;
   window.debug = false;
 };
+
+const genOptsUI = () => {
+  for (const x in globalThis.opts) {
+    const el = document.createElement('div');
+
+    const inp = document.createElement('input');
+    inp.type = 'checkbox';
+    inp.checked = globalThis.opts[x];
+
+    el.onclick = () => {
+      inp.checked = !globalThis.opts[x];
+      globalThis.opts[x] = inp.checked;
+      reExecute(false);
+    };
+
+    el.appendChild(inp);
+    el.appendChild(document.createTextNode(x));
+
+    document.getElementById('opts').appendChild(el);
+  }
+};
+genOptsUI();
+
+const reExecute = (toRun = true) => {
+  execute(code.textContent, toRun);
+};
+
+document.onauxclick = e => {
+  reExecute(true);
+
+  e.preventDefault();
+  return false;
+};
+
 // execute(`++>+><++`);
 
 // execute(`++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.`);
 
+// execute(`>>>+++++ [-<<<+>>>]`);
+
 execute(await (await fetch(`examples/mandelbrot.bf`)).text());
 // execute(await (await fetch(`examples/hanoi.bf`)).text());
 // execute(`+>`.repeat(500));
-
-document.onauxclick = () => {
-  execute(code.textContent);
-};

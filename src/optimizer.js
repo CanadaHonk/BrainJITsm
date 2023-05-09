@@ -68,28 +68,56 @@ class OST extends AST {
   }
 }
 
-const isCopyLoop = nodes => {
+const checkCopyLoop = nodes => {
   const n = (nodes.length - 1) / 3;
   let i = 0;
+  // -
   if (nodes[i].type !== Token.Decrement) return;
 
-  // '>+'.repeat(n)
-  for (i = 1; i <= n * 2; i++) {
-    if (i % 2 === 0 && nodes[i].type !== Token.Increment) return;
-    if (i % 2 === 1 && nodes[i].type !== Token.PointerRight) return;
+  if (nodes[1].type === Token.PointerRight) {
+    // forward copy loop
+
+    // '>+'.repeat(n)
+    for (i = 1; i <= n * 2; i++) {
+      if (i % 2 === 0 && nodes[i].type !== Token.Increment) return;
+      if (i % 2 === 1 && nodes[i].type !== Token.PointerRight) return;
+    }
+
+    // '<'.repeat(n)
+    for (; i <= n * 3; i++) {
+      if (nodes[i].type !== Token.PointerLeft) return;
+    }
+
+    return i === nodes.length && n;
   }
 
-  // '<'.repeat(n)
-  for (; i <= n * 3; i++) {
-    if (nodes[i].type !== Token.PointerLeft) return;
-  }
+  if (nodes[1].type === Token.PointerLeft) {
+    // '<'.repeat(n)
+    for (i = 1; i <= n; i++) {
+      if (nodes[i].type !== Token.PointerLeft) return;
+    }
 
-  return i === nodes.length;
+    // '+>'.repeat(n)
+    for (; i <= n * 3; i++) {
+      if ((i - n) % 2 === 0 && nodes[i].type !== Token.PointerRight) return;
+      if ((i - n) % 2 === 1 && nodes[i].type !== Token.Increment) return;
+    }
+
+    return i === nodes.length && (n * -1);
+  }
+};
+
+globalThis.opts = {
+  copyLoop: true,
+  clearLoop: true,
+  combineOps: true,
+  addToZeroAsSet: true
 };
 
 
 // AST -> OST - optimized, generic ops
 export const optimize = ast => {
+  let depth = 0, index = 0, memory = new Array(1000).fill(0), tainted = false, canSet = false;
   const walk = nodes => {
     let out = [];
     let val = 0;
@@ -102,7 +130,7 @@ export const optimize = ast => {
         (x.type === Token.Increment || x.type === Token.Decrement) && (next.type === Token.Increment || next.type === Token.Decrement)
       );
 
-      if (nextSameOp) {
+      if (nextSameOp && opts.combineOps) {
         switch (x.type) {
           case Token.PointerRight:
           case Token.Increment:
@@ -119,19 +147,31 @@ export const optimize = ast => {
 
       switch (x.type) {
         case Token.PointerRight:
-          out.push({ op: Op.PointerAdd, val: val + 1 });
+          canSet = !tainted && opts.addToZeroAsSet && index === 0;
+          if (!tainted) index += val + 1;
+
+          out.push({ op: canSet ? Op.PointerSet : Op.PointerAdd, val: val + 1 });
           break;
 
         case Token.PointerLeft:
-          out.push({ op: Op.PointerAdd, val: val - 1 });
+          canSet = !tainted && opts.addToZeroAsSet && index === 0;
+          if (!tainted) index += val - 1;
+
+          out.push({ op: canSet ? Op.PointerSet : Op.PointerAdd, val: val - 1 });
           break;
 
         case Token.Increment:
-          out.push({ op: Op.CellAdd, val: val + 1 });
+          canSet = !tainted && opts.addToZeroAsSet && memory[index] === 0;
+          if (!tainted) memory[index] += val + 1;
+
+          out.push({ op: canSet ? Op.CellSet : Op.CellAdd, val: val + 1 });
           break;
 
         case Token.Decrement:
-          out.push({ op: Op.CellAdd, val: val - 1 });
+          canSet = !tainted && opts.addToZeroAsSet && memory[index] === 0;
+          if (!tainted) memory[index] += val - 1;
+
+          out.push({ op: canSet ? Op.CellSet : Op.CellAdd, val: val - 1 });
           break;
 
         case Token.Output:
@@ -143,8 +183,9 @@ export const optimize = ast => {
           break;
 
         case Token.Loop:
-          if (x.nodes.length === 1 && x.nodes[0].type === Token.Decrement) {
+          if (x.nodes.length === 1 && x.nodes[0].type === Token.Decrement && opts.clearLoop) {
             // [-] = Loop { Decrement } = set cell to 0
+            if (!tainted) memory[index] = 0;
             out.push({
               op: Op.CellSet,
               val: 0
@@ -152,18 +193,22 @@ export const optimize = ast => {
             break;
           }
 
-          // [->+<] 4, [->+>+<<] 7, [->+>+>+<<<] 10, etc
-          if ((x.nodes.length - 1) % 3 === 0 && isCopyLoop(x.nodes)) { // 3n + 1
-            const n = (x.nodes.length - 1) / 3;
+          let n;
+          if ((x.nodes.length - 1) % 3 === 0 && x.nodes.length > 1 && (n = checkCopyLoop(x.nodes)) && opts.copyLoop) { // 3n + 1
+            const isBackward = n < 0;
 
-            for (let i = 0; i < n; i++) {
+            for (let i = 0; i < Math.abs(n); i++) {
               // CellAddCell { offset } - mem[index + offset] += mem[index]
+              const offset = isBackward ? -(i + 1) : (i + 1)
+              if (!tainted) memory[index + offset] += memory[index];
+
               out.push({
                 op: Op.CellAddCell,
-                offset: i + 1
+                offset
               });
             }
 
+            if (!tainted) memory[index] = 0;
             // set current cell to 0
             out.push({
               op: Op.CellSet,
@@ -173,6 +218,9 @@ export const optimize = ast => {
             break;
           }
 
+          depth++;
+          tainted = true; // cannot keep track easily
+
           out.push({
             op: Op.Loop,
             nodes: walk(x.nodes)
@@ -181,6 +229,10 @@ export const optimize = ast => {
       }
 
       val = 0;
+    }
+
+    if (depth > 0) {
+      depth--;
     }
 
     return out;
