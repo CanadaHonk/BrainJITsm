@@ -46,6 +46,7 @@ const run = async wasm => {
 
   const t2 = performance.now();
   instance.exports.run();
+  console.log('\n'.repeat(30));
   reportTime('exec', performance.now() - t2);
 
   console.log('memory:\n' + memoryToString(new Uint8Array(memory.buffer)));
@@ -88,9 +89,10 @@ console.log(optimize(parse(`[-<<+>+>]`)).toString());
 console.log(optimize(parse(`[->+<]`)).toString());
 console.log(optimize(parse(`[->+>+<<]`)).toString()); */
 
-execute(`+++++++++++++[->++>>>+++++>++>+<<<<<<]`)
+// execute(`+++++++++++++[->++>>>+++++>++>+<<<<<<]`)
 
 // execute(fs.readFileSync(`examples/mandelbrot.bf`, 'utf8'));
+execute(fs.readFileSync(`examples/hanoi.bf`, 'utf8'));
 
 // execute(await (await fetch(`http://localhost:1337/examples/mandelbrot.bf`)).text());
 // execute(await (await fetch(`examples/hanoi.bf`)).text());
