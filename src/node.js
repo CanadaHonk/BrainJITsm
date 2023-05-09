@@ -79,15 +79,17 @@ const execute = async src => {
 
   reportTime('total', times.reduce((acc, x) => acc + x, 0));
 
-  console.log('ast:\n' + ast.toString());
-  console.log('ost:\n' + ost.toString());
+  // console.log('ast:\n' + ast.toString());
+  // console.log('ost:\n' + ost.toString());
 
   globalThis.debug = true;
   compile(ost);
   globalThis.debug = false;
 
-  console.log('asm:\n' + highlightAsm(asm.join('\n')));
+  // console.log('asm:\n' + highlightAsm(asm.join('\n')));
 };
 
-// execute(fs.readFileSync(`examples/mandelbrot.bf`, 'utf8'));
-execute(fs.readFileSync(`examples/hanoi.bf`, 'utf8'));
+// execute(`>+ [->+<]`);
+
+execute(fs.readFileSync(`examples/mandelbrot.bf`, 'utf8'));
+// execute(fs.readFileSync(`examples/hanoi.bf`, 'utf8'));
