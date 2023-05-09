@@ -20,6 +20,8 @@ const Opcodes = {
 
   block: 0x02,
   loop: 0x03,
+  if: 0x04,
+
   end: 0x0b,
   br: 0x0c,
   br_if: 0x0d,
@@ -196,30 +198,25 @@ const genCode = ost => {
           break;
 
         case Op.Loop:
-          code.push(Opcodes.block);
-          code.push(Blocktype.void);
-          if (globalThis.debug) asm.push(`block 0`);
           code.push(Opcodes.loop);
           code.push(Blocktype.void);
-          if (globalThis.debug) asm.push(`loop 1`);
+          if (globalThis.debug) asm.push(`loop 0`);
 
           // compute the while-like expression
           loadCell();
-          code.push(Opcodes.i32_eqz);
-          if (globalThis.debug) asm.push(`i32.eqz`);
 
-          // br_if $label0
-          code.push(Opcodes.br_if);
-          code.push(...signedLEB128(1));
-          if (globalThis.debug) asm.push(`br_if 1`);
+          // if $label0
+          code.push(Opcodes.if);
+          code.push(Blocktype.void);
+          if (globalThis.debug) asm.push(`if 1`);
 
           // the nested logic
           emitCode(x.nodes);
 
           // br $label1
           code.push(Opcodes.br);
-          code.push(...signedLEB128(0));
-          if (globalThis.debug) asm.push(`br 0`);
+          code.push(...signedLEB128(1));
+          if (globalThis.debug) asm.push(`br 1`);
 
           code.push(Opcodes.end);
           code.push(Opcodes.end);
