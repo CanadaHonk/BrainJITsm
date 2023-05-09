@@ -8,13 +8,11 @@ class OST extends AST {
     let out = '';
     let depth = 0;
 
-    const indent = x => ' │ '.repeat(x);
-
     const beautify = nodes => {
       let i = 0;
       for (const x of nodes) {
         const last = depth > 0 && i === nodes.length - 1 && x.op !== Op.Loop;
-        out += indent(depth);
+        out += ' │ '.repeat(depth);
 
         if (last) out = out.slice(0, -2) + '└ ';
 
