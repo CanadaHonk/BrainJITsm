@@ -108,10 +108,11 @@ const checkCopyLoop = nodes => {
 };
 
 globalThis.opts = {
+  combineOps: true,
   copyLoop: true,
   clearLoop: true,
-  combineOps: true,
-  addToZeroAsSet: true
+  addToZeroAsSet: true,
+  asmSetGetAsTee: true,
 };
 
 
