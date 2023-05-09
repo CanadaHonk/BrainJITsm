@@ -15,8 +15,18 @@ const reportTime = (what, ms) => {
 
 const memoryToString = buf => {
   let out = '';
-  for (let i = 0; i < Math.floor((window.innerWidth * 0.4) / 28); i++) {
-    out += buf[i].toString(16).padStart(2, '0') + ' ';
+  const xCells = Math.floor((window.innerWidth * 0.4) / 26);
+  const yCells = Math.floor(((window.innerHeight * 0.2) - 32) / 22);
+
+  for (let j = 0; j < yCells; j++) {
+    for (let i = 0; i < xCells; i++) {
+      const val = buf[j * xCells + i];
+      if (val === 0) out += '<span class="memory-empty">';
+      out += val.toString(16).padStart(2, '0');
+      if (val === 0) out += '</span>';
+      out += ' ';
+    }
+    out += '\n';
   }
 
   return out;
@@ -38,7 +48,7 @@ const run = async wasm => {
   instance.exports.run();
   reportTime('exec', performance.now() - t2);
 
-  document.getElementById('memory').textContent = memoryToString(new Uint8Array(memory.buffer));
+  document.getElementById('memory').innerHTML = memoryToString(new Uint8Array(memory.buffer));
 };
 
 const highlightAsm = asm =>
