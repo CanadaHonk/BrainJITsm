@@ -54,10 +54,10 @@ const run = async wasm => {
 
 const highlightAsm = asm =>
   asm
-    .replace(/local\.[^\s]*/g, _ => `<span class="highlight-var">${_}</span>`)
-    .replace(/(call|block|loop|br_if|br)/g, _ => `<span class="highlight-flow">${_}</span>`)
-    .replace(/i32\.[^\s]*/g, _ => `<span class="highlight-num">${_}</span>`)
-    .replace(/ [0-9\-]+/g, _ => ` <span class="highlight-const">${_.slice(1)}</span>`)
+    .replace(/local\.[^\s]*/g, _ => `\x1B[31m${_}\x1B[0m`)
+    .replace(/(call|block|loop|br_if|br)/g, _ => `\x1B[35m${_}\x1B[0m`)
+    .replace(/i32\.[^\s]*/g, _ => `\x1B[36m${_}\x1B[0m`)
+    .replace(/ [0-9\-]+/g, _ => ` \x1B[33m${_.slice(1)}\x1B[0m`)
 
 const execute = async src => {
   times = [];
@@ -73,27 +73,21 @@ const execute = async src => {
   const wasm = compile(ost);
   reportTime('compile', performance.now() - t3);
 
+  fs.writeFileSync('out.wasm', Buffer.from(wasm));
+
   await run(wasm);
 
   reportTime('total', times.reduce((acc, x) => acc + x, 0));
 
+  console.log('ast:\n' + ast.toString());
+  console.log('ost:\n' + ost.toString());
+
+  globalThis.debug = true;
   compile(ost);
-  // console.log(asm.join('\n'));
+  globalThis.debug = false;
+
+  console.log('asm:\n' + highlightAsm(asm.join('\n')));
 };
-// execute(`++>+><++`);
-
-// execute(`++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.`);
-
-/* console.log(optimize(parse(`[-<+>]`)).toString());
-console.log(optimize(parse(`[-<<+>+>]`)).toString());
-console.log(optimize(parse(`[->+<]`)).toString());
-console.log(optimize(parse(`[->+>+<<]`)).toString()); */
-
-// execute(`+++++++++++++[->++>>>+++++>++>+<<<<<<]`)
 
 // execute(fs.readFileSync(`examples/mandelbrot.bf`, 'utf8'));
 execute(fs.readFileSync(`examples/hanoi.bf`, 'utf8'));
-
-// execute(await (await fetch(`http://localhost:1337/examples/mandelbrot.bf`)).text());
-// execute(await (await fetch(`examples/hanoi.bf`)).text());
-// execute(`+>`.repeat(500));
