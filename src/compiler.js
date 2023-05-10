@@ -32,7 +32,7 @@ const Opcodes = {
   local_tee: 0x22, // set and return value (set and get combined)
 
   i32_load: 0x28,
-  i32_load8_s: 0x2C,
+  i32_load8_s: 0x2c,
   i32_store: 0x36,
   i32_store8: 0x3a,
 
@@ -43,6 +43,7 @@ const Opcodes = {
 
   i32_add: 0x6a,
   i32_sub: 0x6b,
+  i32_mul: 0x6c,
 };
 
 const FuncType = 0x60;
@@ -129,6 +130,12 @@ const genCode = ost => {
     if (globalThis.debug) asm.push(`i32.add`);
   };
 
+  const mulI32 = val => { // ($value) -> ($value * val)
+    loadI32(val);
+    code.push(Opcodes.i32_mul);
+    if (globalThis.debug) asm.push(`i32.mul`);
+  };
+
   const debug = str => {
     for (const x of codifyString(str + '\n')) {
       loadI32(x);
@@ -179,6 +186,10 @@ const genCode = ost => {
 
           // load current and offset cell to add
           loadCell();
+
+          // if factor is provided, mul current cell by factor
+          if (x.factor) mulI32(x.factor);
+
           loadCell(x.offset);
           code.push(Opcodes.i32_add);
           if (globalThis.debug) asm.push(`i32.add`);

@@ -34,6 +34,7 @@ class OST extends AST {
 
           case Op.CellAddCell:
             out += `CellAddCell ${x.offset}`;
+            if (x.factor) out += ` * ${x.factor}`;
             break;
 
           case Op.Output:
