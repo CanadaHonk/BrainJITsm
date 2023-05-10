@@ -188,7 +188,7 @@ const genCode = ost => {
           loadCell();
 
           // if factor is provided, mul current cell by factor
-          if (x.factor) mulI32(x.factor);
+          if (x.factor !== 1) mulI32(x.factor);
 
           loadCell(x.offset);
           code.push(Opcodes.i32_add);
