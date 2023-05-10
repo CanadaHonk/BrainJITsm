@@ -89,7 +89,9 @@ const execute = async src => {
   // console.log('asm:\n' + highlightAsm(asm.join('\n')));
 };
 
-// execute(`>+ [->+<]`);
+// execute(`[-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]`);
 
-execute(fs.readFileSync(`examples/mandelbrot.bf`, 'utf8'));
-// execute(fs.readFileSync(`examples/hanoi.bf`, 'utf8'));
+// execute(`++ [->+++>+++++++<<]`);
+
+// execute(fs.readFileSync(`examples/mandelbrot.bf`, 'utf8'));
+execute(fs.readFileSync(process.argv[2] ?? `examples/hanoi.bf`, 'utf8'));
