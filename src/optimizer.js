@@ -68,95 +68,66 @@ class OST extends AST {
   }
 }
 
-const checkCopyLoop = nodes => {
-  const n = (nodes.length - 1) / 3;
-  let i = 0;
-
+const checkLoops = nodes => {
   // -
   if (nodes[0].type !== Token.Decrement) return;
+  // > || <
+  if (nodes[1].type !== Token.PointerRight && nodes[1].type !== Token.PointerLeft) return;
 
-  if (nodes[1].type === Token.PointerRight) {
-    // forward copy loop
+  let i = 1;
+  let s = 0, o = [];
+  let p = 0, f = 0;
+  while (i < nodes.length) {
+    switch (nodes[i].type) {
+      case Token.PointerRight:
+        if (s === 1) {
+          o.push([ p, f ]);
+          f = 0;
+          s = 0;
+        }
 
-    // '>+'.repeat(n)
-    for (i = 1; i <= n * 2; i++) {
-      if (i % 2 === 0 && nodes[i].type !== Token.Increment) return;
-      if (i % 2 === 1 && nodes[i].type !== Token.PointerRight) return;
+        p++;
+        break;
+
+      case Token.PointerLeft:
+        if (s === 1) {
+          o.push([ p, f ]);
+          f = 0;
+          s = 0;
+        }
+
+        p--;
+        break;
+
+      case Token.Increment:
+        if (s === 0) {
+          s = 1;
+        }
+
+        f++;
+        break;
+
+      case Token.Decrement:
+        if (s === 0) {
+          s = 1;
+        }
+
+        f--;
+        break;
+
+      default:
+        return;
     }
 
-    // '<'.repeat(n)
-    for (; i <= n * 3; i++) {
-      if (nodes[i].type !== Token.PointerLeft) return;
-    }
-
-    return i === nodes.length && n;
+    i++;
   }
 
-  if (nodes[1].type === Token.PointerLeft) {
-    // backward copy loop
-    // '<'.repeat(n)
-    for (i = 1; i <= n; i++) {
-      if (nodes[i].type !== Token.PointerLeft) return;
-    }
-
-    // '+>'.repeat(n)
-    for (; i <= n * 3; i++) {
-      if ((i - n) % 2 === 0 && nodes[i].type !== Token.PointerRight) return;
-      if ((i - n) % 2 === 1 && nodes[i].type !== Token.Increment) return;
-    }
-
-    return i === nodes.length && (n * -1);
-  }
-};
-
-const checkMoveLoop = nodes => {
-  const n = (nodes.length - 2) / 2;
-  let i = 0;
-
-  // -
-  if (nodes[0].type !== Token.Decrement) return;
-
-  if (nodes[1].type === Token.PointerRight) {
-    // forward move loop
-    // '>'.repeat(n)
-    for (i = 1; i <= n; i++) {
-      if (nodes[i].type !== Token.PointerRight) return;
-    }
-
-    // +
-    if (nodes[i++].type !== Token.Increment) return;
-
-    // '<'.repeat(n)
-    for (; i <= n * 2 + 1; i++) {
-      if (nodes[i].type !== Token.PointerLeft) return;
-    }
-
-    return i === nodes.length && n;
-  }
-
-  if (nodes[1].type === Token.PointerLeft) {
-    // backward move loop
-    // '<'.repeat(n)
-    for (i = 1; i <= n; i++) {
-      if (nodes[i].type !== Token.PointerLeft) return;
-    }
-
-    // +
-    if (nodes[i++].type !== Token.Increment) return;
-
-    // '>'.repeat(n)
-    for (; i <= n * 2 + 1; i++) {
-      if (nodes[i].type !== Token.PointerRight) return;
-    }
-
-    return i === nodes.length && (n * -1);
-  }
+  return p === 0 && o;
 };
 
 globalThis.opts = {
   combineOps: true,
-  copyLoop: true,
-  moveLoop: false,
+  AMMLoops: true,
   clearLoop: true,
   addToZeroAsSet: true,
   asmSetGetAsTee: true,
@@ -242,38 +213,15 @@ export const optimize = ast => {
           }
 
           let n;
-          if ((x.nodes.length - 1) % 3 === 0 && x.nodes.length > 1 && (n = checkCopyLoop(x.nodes)) && opts.copyLoop) { // 3n + 1
-            const isBackward = n < 0;
-
-            for (let i = 0; i < Math.abs(n); i++) {
-              // CellAddCell { offset } - mem[index + offset] += mem[index]
-              const offset = isBackward ? -(i + 1) : (i + 1)
-              if (!tainted) memory[index + offset] += memory[index];
-
+          if (x.nodes.length > 3 && (n = checkLoops(x.nodes)) && opts.AMMLoops) { // 3n + 1
+            for (const x of n) {
+              if (!tainted) memory[index + x[0]] += memory[index] * x[1];
               out.push({
                 op: Op.CellAddCell,
-                offset
+                offset: x[0],
+                factor: x[1]
               });
             }
-
-            if (!tainted) memory[index] = 0;
-            // set current cell to 0
-            out.push({
-              op: Op.CellSet,
-              val: 0
-            });
-
-            break;
-          }
-
-          if (x.nodes.length % 2 === 0 && (n = checkMoveLoop(x.nodes)) && opts.moveLoop) { // 2n + 2
-            console.log(n, x);
-
-            if (!tainted) memory[index + n] += memory[index];
-            out.push({
-              op: Op.CellAddCell,
-              offset: n
-            });
 
             if (!tainted) memory[index] = 0;
             // set current cell to 0
