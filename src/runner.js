@@ -5,6 +5,8 @@ import { compile, asm } from './compiler.js';
 let times = [];
 
 const print = str => out.textContent += str;
+const sleep = ms => new Promise(res => setTimeout(res, ms));
+
 const reportTime = (what, ms) => {
   times.push(ms);
 
@@ -35,10 +37,12 @@ const memoryToString = buf => {
 const run = async wasm => {
   const t1 = performance.now();
 
+  let outputBuffer = [];
+
   const memory = new WebAssembly.Memory({ initial: 1 });
   const { instance } = await WebAssembly.instantiate(wasm, {
     '': {
-      print: i => print(String.fromCharCode(i)),
+      print: i => outputBuffer.push(i), // print(String.fromCharCode(i)),
       memory
     }
   });
@@ -48,7 +52,11 @@ const run = async wasm => {
   instance.exports.run();
   reportTime('exec', performance.now() - t2);
 
-  document.getElementById('memory').innerHTML = memoryToString(new Uint8Array(memory.buffer));
+  print(outputBuffer.reduce((acc, x) => acc += String.fromCharCode(x), ''));
+
+  setTimeout(() => {
+    document.getElementById('memory').innerHTML = memoryToString(new Uint8Array(memory.buffer));
+  }, 10);
 };
 
 const highlightAsm = asm =>
@@ -89,22 +97,26 @@ const execute = async (src, toRun = true) => {
 
   reportTime('total', times.reduce((acc, x) => acc + x, 0));
 
-  setTimeout(() => {
-    window.debug = true;
-    compile(ost);
-    document.getElementById('asm').innerHTML = highlightAsm(asm.join('\n'));
-    asm_stats.textContent = `${asm.length} ops, ${wasm.byteLength} bytes`;
-    window.debug = false;
+  await sleep(100);
 
-    reportAST('AST', ast);
-    /* ast_wrapper.onclick = () => {
-      if (ast_name.textContent === 'AST') reportAST('OST', ost);
-        else reportAST('AST', ast);
-    }; */
+  window.debug = true;
+  compile(ost);
+  document.getElementById('asm').innerHTML = highlightAsm(asm.join('\n'));
+  asm_stats.textContent = `${asm.length} ops, ${wasm.byteLength} bytes`;
+  window.debug = false;
 
-    ost_stats.textContent = `${ost.length()} nodes`;
-    document.getElementById('ost').textContent = ost.toString();
-  }, 100);
+  await sleep(50);
+
+  reportAST('AST', ast);
+  ast_wrapper.onclick = () => {
+    if (ast_name.textContent === 'AST') reportAST('OST', ost);
+      else reportAST('AST', ast);
+  };
+
+  await sleep(50);
+
+  ost_stats.textContent = `${ost.length()} nodes`;
+  document.getElementById('ost').textContent = ost.toString();
 };
 
 const genOptsUI = () => {
@@ -193,6 +205,6 @@ document.onauxclick = e => {
 
 // execute(`>>>+++++ [-<<<+>>>]`);
 
-execute(await (await fetch(`examples/mandelbrot.bf`)).text());
-// execute(await (await fetch(`examples/hanoi.bf`)).text());
+// execute(await (await fetch(`examples/mandelbrot.bf`)).text());
+execute(await (await fetch(`examples/hanoi.bf`)).text());
 // execute(`+>`.repeat(500));
