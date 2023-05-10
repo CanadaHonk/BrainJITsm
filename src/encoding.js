@@ -5,7 +5,7 @@ export const codifyString = str => {
   }
 
   return out;
-}
+};
 
 export const encodeString = str => [
   str.length,
