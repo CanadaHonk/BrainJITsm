@@ -96,7 +96,7 @@ body > div:not(#below):not(#opts), #below > div {
   background: none;
   height: 5vh;
 
-  gap: 2vw;
+  gap: 16px;
 
   align-items: center;
   justify-content: center;
@@ -108,6 +108,15 @@ body > div:not(#below):not(#opts), #below > div {
   gap: 4px;
   cursor: pointer;
   user-select: none;
+}
+
+#opts > :first-child {
+  margin-right: 64px;
+}
+
+#opts > :nth-child(2) {
+  margin-right: 32px;
+  cursor: default;
 }
 
 #opt_level {
